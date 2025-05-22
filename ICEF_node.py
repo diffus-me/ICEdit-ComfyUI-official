@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import execution_context
 import folder_paths, os
 from comfy.supported_models import FluxInpaint, models
 from comfy.comfy_types import IO, ComfyNodeABC, InputTypeDict, FileLocator
@@ -37,14 +38,17 @@ class InContextEditInstruction(ComfyNodeABC):
     
 class DiptychCreate:
     @classmethod
-    def INPUT_TYPES(s):
-        input_dir = folder_paths.get_input_directory()
+    def INPUT_TYPES(s, context: execution_context.ExecutionContext):
+        input_dir = folder_paths.get_input_directory(context.user_hash)
         files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         image_options = ["None"] + sorted(files)  # Add "None" as the first option
         return {"required":
                     {"image": (image_options, {"image_upload": True})}, # Use updated options
                 "optional": {
                     "image_input": ("IMAGE",)
+                },
+                "hidden": {
+                    "context": "EXECUTION_CONTEXT",
                 }
                 }
 
@@ -91,7 +95,7 @@ class DiptychCreate:
         height = max(height, 576) if height == FIXED_DIMENSION else height
 
         return width, height
-    def create(self, image, image_input=None):
+    def create(self, image, image_input=None, context: execution_context.ExecutionContext=None):
         # Determine the source of the image
         img_pil = None  # PIL Image object that will be processed
         original_image_pil = None # PIL copy of the input image
@@ -104,7 +108,7 @@ class DiptychCreate:
         elif image != "None":
             # No image_input, use local file if 'image' is not "None"
             # VALIDATE_INPUTS should have ensured 'image' is a valid path if not "None"
-            image_path = folder_paths.get_annotated_filepath(image)
+            image_path = folder_paths.get_annotated_filepath(image, context.user_hash)
             img_pil = node_helpers.pillow(Image.open, image_path)
             img_pil = node_helpers.pillow(ImageOps.exif_transpose, img_pil)
             original_image_pil = img_pil.copy()
@@ -158,13 +162,13 @@ class DiptychCreate:
         return (combined_image, mask_tensor, original_image)
 
     @classmethod
-    def IS_CHANGED(s, image, image_input=None):
+    def IS_CHANGED(s, image, image_input=None, context: execution_context.ExecutionContext=None):
         if image_input is not None:
             # If image_input is provided, its change is the primary determinant
             return hashlib.sha256(image_input.tobytes()).hexdigest()
         elif image != "None":
             # If image_input is None, and a local image is selected
-            image_path = folder_paths.get_annotated_filepath(image)
+            image_path = folder_paths.get_annotated_filepath(image, context.user_hash)
             m = hashlib.sha256()
             with open(image_path, 'rb') as f:
                 m.update(f.read())
@@ -175,12 +179,12 @@ class DiptychCreate:
             return "NONE_IMAGE_SELECTED_NO_INPUT_HASH" # Unique string for this state
 
     @classmethod
-    def VALIDATE_INPUTS(s, image):
+    def VALIDATE_INPUTS(s, image, context: execution_context.ExecutionContext=None):
         if image == "None":
             # "None" is a valid selection from the dropdown.
             # The 'create' method will handle logic if no actual image data is available.
             return True
-        if not folder_paths.exists_annotated_filepath(image):
+        if not folder_paths.exists_annotated_filepath(image, context.user_hash):
             return "Invalid image file: {}".format(image)
         return True
     

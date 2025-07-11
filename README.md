@@ -7,6 +7,7 @@ In addition to directly loading images using the DiptyCreate node, you can also 
 
 ## 🎆 News 
 
+- **[2025/7/11]** 🙌 Thanks to [编程界的小学生] for writing a helpful [tutorial](https://plugin.aix.ink/archives/v3HivZax) for our [ICEdit-ComfyUI-official](https://github.com/hayd-zju/ICEdit-ComfyUI-official) plugin! 🎉 A great place to start if you're new!
 - **[2025/5/14]** 🔥 With the help of the [official comfy-org](https://www.comfy.org/zh-cn/), we have integrated our ComfyUI nodes into [Comfy Registry](https://registry.comfy.org/nodes/ICEdit)! 
 - **[2025/5/9]** 🔥 We have released our **[official ComfyUI workflow](https://github.com/hayd-zju/ICEdit-ComfyUI-official/tree/main)**! 🚀 Check the repository and have a try!
 
